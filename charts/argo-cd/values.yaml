@@ -516,8 +516,6 @@ controller:
     name: argocd-application-controller
     # -- Annotations applied to created service account
     annotations: {}
-    # -- Labels applied to created service account
-    labels: {}
     # -- Automount API credentials for the Service Account
     automountServiceAccountToken: true
 
@@ -567,7 +565,7 @@ controller:
       spec: []
       # - alert: ArgoAppMissing
       #   expr: |
-      #     absent(argocd_app_info) == 1
+      #     absent(argocd_app_info)
       #   for: 15m
       #   labels:
       #     severity: critical
@@ -689,7 +687,7 @@ dex:
     # -- Dex image repository
     repository: ghcr.io/dexidp/dex
     # -- Dex image tag
-    tag: v2.35.1-distroless
+    tag: v2.35.0-distroless
     # -- Dex imagePullPolicy
     # @default -- `""` (defaults to global.image.imagePullPolicy)
     imagePullPolicy: ""
@@ -1358,16 +1356,18 @@ server:
     name: argocd-server
     # -- Annotations applied to created service account
     annotations: {}
-    # -- Labels applied to created service account
-    labels: {}
     # -- Automount API credentials for the Service Account
     automountServiceAccountToken: true
 
   ingress:
     # -- Enable an ingress resource for the Argo CD server
-    enabled: false
+    enabled: true
     # -- Additional ingress annotations
-    annotations: {}
+    annotations:
+      kubernetes.io/ingress.class: public
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     # -- Additional ingress labels
     labels: {}
     # -- Defines which ingress controller will implement the resource
@@ -1378,7 +1378,7 @@ server:
     ## Hostnames must be provided if Ingress is enabled.
     ## Secrets must be manually created in the namespace
     hosts:
-      []
+      - argo-cd.knt.dev
       # - argocd.example.com
 
     # -- List of ingress paths
@@ -1404,13 +1404,12 @@ server:
 
     # -- Ingress TLS configuration
     tls:
-      []
-      # - secretName: argocd-tls-certificate
-      #   hosts:
-      #     - argocd.example.com
+      - secretName: knt-tls-secret
+        hosts:
+          - argo-cd.knt.dev
 
     # -- Uses `server.service.servicePortHttps` instead `server.service.servicePortHttp`
-    https: false
+    https: true
 
   # dedicated ingress for gRPC as documented at
   # Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/
@@ -2072,8 +2071,6 @@ applicationSet:
     create: true
     # -- Annotations to add to the service account
     annotations: {}
-    # -- Labels applied to created service account
-    labels: {}
     # -- The name of the service account to use.
     # If not set and create is true, a name is generated using the fullname template
     name: ""
